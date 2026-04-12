@@ -212,6 +212,7 @@
         "missingApiKey": "Please provide an API key.",
         "requestFailed": "Request failed.",
         "networkError": "Network error: {error}",
+        "requestSuccess": "{account}: Request successful ({time}ms)",
         "testSuccess": "{account}: Token refresh successful ({time}ms)",
         "config": "Configuration",
         "modelLabel": "Model",

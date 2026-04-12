@@ -236,12 +236,12 @@ export function useChatStreamClient({
                         },
                     }],
                 })
-                onMessage('success', t('apiTester.testSuccess', { account: requestAccount || selectedAccountId || 'Auto', time: Math.max(0, Date.now() - startedAt) }))
+                onMessage('success', t('apiTester.requestSuccess', { account: requestAccount || selectedAccountId || 'Auto', time: Math.max(0, Date.now() - startedAt) }))
             } else {
                 const data = await res.json()
                 setResponse({ success: true, status_code: res.status, ...data })
                 const elapsed = Math.max(0, Date.now() - startedAt)
-                onMessage('success', t('apiTester.testSuccess', { account: requestAccount || 'Auto', time: elapsed }))
+                onMessage('success', t('apiTester.requestSuccess', { account: requestAccount || 'Auto', time: elapsed }))
             }
         } catch (e) {
             if (e.name === 'AbortError') {

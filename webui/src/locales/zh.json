@@ -212,6 +212,7 @@
         "missingApiKey": "请提供 API 密钥",
         "requestFailed": "请求失败",
         "networkError": "网络错误: {error}",
+        "requestSuccess": "{account}: 请求成功 ({time}ms)",
         "testSuccess": "{account}: Token 刷新成功 ({time}ms)",
         "config": "配置",
         "modelLabel": "模型",
