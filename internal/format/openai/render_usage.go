@@ -20,6 +20,12 @@ func BuildChatUsage(finalPrompt, finalThinking, finalText string) map[string]any
 	return BuildChatUsageForModel("", finalPrompt, finalThinking, finalText, 0)
 }
 
+func ExtractTokenUsage(prompt, thinking, text string) (inputTokens, outputTokens int) {
+	inputTokens = util.EstimateTokens(prompt)
+	outputTokens = util.EstimateTokens(thinking) + util.EstimateTokens(text)
+	return
+}
+
 func BuildResponsesUsageForModel(model, finalPrompt, finalThinking, finalText string, refFileTokens int) map[string]any {
 	promptTokens := util.CountPromptTokens(finalPrompt, model) + refFileTokens
 	reasoningTokens := util.CountOutputTokens(finalThinking, model)

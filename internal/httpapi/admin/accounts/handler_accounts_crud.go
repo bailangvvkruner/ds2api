@@ -69,6 +69,7 @@ func (h *Handler) listAccounts(w http.ResponseWriter, r *http.Request) {
 			"has_token":     token != "",
 			"token_preview": maskSecretPreview(token),
 			"test_status":   testStatus,
+			"paused":        acc.Paused,
 		})
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"items": items, "total": total, "page": page, "page_size": pageSize, "total_pages": totalPages})
@@ -106,6 +107,43 @@ func (h *Handler) addAccount(w http.ResponseWriter, r *http.Request) {
 	}
 	h.Pool.Reset()
 	writeJSON(w, http.StatusOK, map[string]any{"success": true, "total_accounts": len(h.Store.Snapshot().Accounts)})
+}
+
+func (h *Handler) pauseAccount(w http.ResponseWriter, r *http.Request) {
+	identifier := chi.URLParam(r, "identifier")
+	if decoded, err := url.PathUnescape(identifier); err == nil {
+		identifier = decoded
+	}
+
+	var req map[string]any
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]any{"detail": "invalid json"})
+		return
+	}
+
+	paused, ok := req["paused"].(bool)
+	if !ok {
+		writeJSON(w, http.StatusBadRequest, map[string]any{"detail": "missing or invalid 'paused' field"})
+		return
+	}
+
+	acc, found := h.Store.FindAccount(identifier)
+	if !found {
+		writeJSON(w, http.StatusNotFound, map[string]any{"detail": "account not found"})
+		return
+	}
+
+	if err := h.Store.UpdateAccountPaused(identifier, paused); err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]any{"detail": err.Error()})
+		return
+	}
+
+	h.Pool.Reset()
+	action := "resumed"
+	if paused {
+		action = "paused"
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"success": true, "account": acc.Identifier(), "paused": paused, "message": "Account " + action})
 }
 
 func (h *Handler) updateAccount(w http.ResponseWriter, r *http.Request) {
