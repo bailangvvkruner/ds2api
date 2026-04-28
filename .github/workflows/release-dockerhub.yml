@@ -1,11 +1,15 @@
 name: Release to Docker Hub
 
 on:
+  push:
+    branches:
+      - data
+      - dev
   workflow_dispatch:
     inputs:
       version_type:
-        description: '版本类型'
-        required: true
+        description: '版本类型 (不填则自动 patch)'
+        required: false
         default: 'patch'
         type: choice
         options:
@@ -18,7 +22,13 @@ permissions:
 
 jobs:
   release:
-    runs-on: ubuntu-latest
+    # runs-on: ubuntu-latest
+    runs-on:
+      # ubuntu-latest
+      - self-hosted
+      - linux
+      - x64
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -61,6 +71,15 @@ jobs:
           MAJOR="${version_parts[0]:-0}"
           MINOR="${version_parts[1]:-0}"
           PATCH="${version_parts[2]:-0}"
+
+          # Auto-detect version type for push events
+          if [ -z "$VERSION_TYPE" ]; then
+            if [ "$GITHUB_REF" == "refs/heads/dev" ]; then
+              VERSION_TYPE="patch"
+            else
+              VERSION_TYPE="patch"
+            fi
+          fi
 
           case "$VERSION_TYPE" in
             major)
@@ -114,7 +133,9 @@ jobs:
         with:
           context: .
           file: ./Dockerfile
-          platforms: linux/amd64,linux/arm64
+          # platforms: linux/amd64,linux/arm64
+          platforms: |
+            linux/amd64
           push: true
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/ds2api:${{ steps.next_version.outputs.new_tag }}

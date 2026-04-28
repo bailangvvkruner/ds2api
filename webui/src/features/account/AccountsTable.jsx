@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ChevronLeft, ChevronRight, Check, Copy, Pencil, Play, Plus, Trash2, FolderX } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Check, Copy, Pencil, Play, PlayCircle, Plus, PowerOff, Trash2, FolderX } from 'lucide-react'
 import clsx from 'clsx'
 
 export default function AccountsTable({
@@ -30,6 +30,8 @@ export default function AccountsTable({
     onPageSizeChange,
     searchQuery,
     onSearchChange,
+    onPauseAccount,
+    pausingAccount,
     envBacked = false,
 }) {
     const [copiedId, setCopiedId] = useState(null)
@@ -195,6 +197,25 @@ export default function AccountsTable({
                                         className="px-2 lg:px-3 py-1 lg:py-1.5 text-[10px] lg:text-xs font-medium border border-border rounded-md hover:bg-secondary transition-colors disabled:opacity-50"
                                     >
                                         {testing[id] ? t('actions.testing') : t('actions.test')}
+                                    </button>
+                                    <button
+                                        onClick={() => onPauseAccount(id, acc.paused ? false : true)}
+                                        disabled={pausingAccount && pausingAccount[id]}
+                                        className={clsx(
+                                            "p-1 lg:p-1.5 rounded-md transition-colors disabled:opacity-50",
+                                            acc.paused
+                                                ? "text-emerald-500 hover:bg-emerald-500/10"
+                                                : "text-amber-500 hover:bg-amber-500/10"
+                                        )}
+                                        title={acc.paused ? t('accountActions.resume') : t('accountActions.pause')}
+                                    >
+                                        {pausingAccount && pausingAccount[id] ? (
+                                            <span className="animate-spin w-3.5 h-3.5 lg:w-4 lg:h-4 inline-block">⟳</span>
+                                        ) : acc.paused ? (
+                                            <PlayCircle className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
+                                        ) : (
+                                            <PowerOff className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
+                                        )}
                                     </button>
                                     <button
                                         onClick={() => onDeleteAccount(id)}

@@ -466,5 +466,24 @@
             "three": "Update the env var in Vercel:",
             "four": "Trigger a redeploy to apply the updated environment variables."
         }
+    },
+    "statistics": {
+        "todayRequests": "Today Requests",
+        "requestsUnit": "requests",
+        "todayTokens": "Today Tokens",
+        "tokenDirection": "input / output",
+        "totalTokens": "Total Tokens",
+        "performance": "Performance",
+        "rpmTpm": "RPM / TPM",
+        "avgResponseTime": "Avg Response",
+        "avgResponseUnit": "s"
+    },
+    "accountActions": {
+        "pause": "Pause",
+        "resume": "Resume",
+        "pauseSuccess": "Account paused",
+        "resumeSuccess": "Account resumed",
+        "pauseFailed": "Failed to pause",
+        "resumeFailed": "Failed to resume"
     }
 }

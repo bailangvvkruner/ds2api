@@ -192,8 +192,6 @@ func (s *Store) UpdateAccountToken(identifier, token string) error {
 	oldID := s.cfg.Accounts[idx].Identifier()
 	s.cfg.Accounts[idx].Token = token
 	newID := s.cfg.Accounts[idx].Identifier()
-	// Keep historical aliases usable for long-lived queues while also adding
-	// the latest identifier after token refresh.
 	if identifier != "" {
 		s.accMap[identifier] = idx
 	}
@@ -203,6 +201,18 @@ func (s *Store) UpdateAccountToken(identifier, token string) error {
 	if newID != "" {
 		s.accMap[newID] = idx
 	}
+	return s.saveLocked()
+}
+
+func (s *Store) UpdateAccountPaused(identifier string, paused bool) error {
+	identifier = strings.TrimSpace(identifier)
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	idx, ok := s.findAccountIndexLocked(identifier)
+	if !ok {
+		return errors.New("account not found")
+	}
+	s.cfg.Accounts[idx].Paused = paused
 	return s.saveLocked()
 }
 

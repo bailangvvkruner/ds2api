@@ -466,5 +466,24 @@
             "three": "更新 Vercel 项目中的环境变量：",
             "four": "触发重新部署以应用新的环境变量。"
         }
+    },
+    "statistics": {
+        "todayRequests": "今日请求",
+        "requestsUnit": "次请求",
+        "todayTokens": "今日 Token",
+        "tokenDirection": "输入 / 输出",
+        "totalTokens": "累计 Token",
+        "performance": "性能指标",
+        "rpmTpm": "RPM / TPM",
+        "avgResponseTime": "平均响应",
+        "avgResponseUnit": "秒"
+    },
+    "accountActions": {
+        "pause": "暂停",
+        "resume": "恢复",
+        "pauseSuccess": "账号已暂停",
+        "resumeSuccess": "账号已恢复",
+        "pauseFailed": "暂停失败",
+        "resumeFailed": "恢复失败"
     }
 }

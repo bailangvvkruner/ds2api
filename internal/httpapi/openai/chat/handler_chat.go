@@ -180,6 +180,10 @@ func (h *Handler) handleNonStream(w http.ResponseWriter, resp *http.Response, co
 	if historySession != nil {
 		historySession.success(http.StatusOK, finalThinking, finalText, finishReason, openaifmt.BuildChatUsage(finalPrompt, finalThinking, finalText))
 	}
+	if h.Pool != nil {
+		inputTokens, outputTokens := openaifmt.ExtractTokenUsage(finalPrompt, finalThinking, finalText)
+		h.Pool.RecordRequest(int64(inputTokens), int64(outputTokens), 0)
+	}
 	writeJSON(w, http.StatusOK, respBody)
 }
 

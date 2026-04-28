@@ -17,6 +17,7 @@ type Pool struct {
 	recommendedConcurrency int
 	maxQueueSize           int
 	globalMaxInflight      int
+	stats                  *Stats
 }
 
 func NewPool(store *config.Store) *Pool {
@@ -28,6 +29,7 @@ func NewPool(store *config.Store) *Pool {
 		store:                 store,
 		inUse:                 map[string]int{},
 		maxInflightPerAccount: maxPer,
+		stats:                 NewStats(),
 	}
 	p.Reset()
 	return p
@@ -117,7 +119,7 @@ func (p *Pool) Status() map[string]any {
 		}
 	}
 	sort.Strings(inUseAccounts)
-	return map[string]any{
+	status := map[string]any{
 		"available":                len(available),
 		"in_use":                   inUseSlots,
 		"total":                    len(p.store.Accounts()),
@@ -129,4 +131,12 @@ func (p *Pool) Status() map[string]any {
 		"waiting":                  len(p.waiters),
 		"max_queue_size":           p.maxQueueSize,
 	}
+	for k, v := range p.stats.GetStatus() {
+		status[k] = v
+	}
+	return status
+}
+
+func (p *Pool) RecordRequest(inputTokens, outputTokens int64, responseTime float64) {
+	p.stats.RecordRequest(inputTokens, outputTokens, responseTime)
 }
