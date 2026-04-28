@@ -182,6 +182,7 @@ func (h *Handler) handleNonStream(w http.ResponseWriter, resp *http.Response, co
 	}
 	if h.Pool != nil {
 		inputTokens, outputTokens := openaifmt.ExtractTokenUsage(finalPrompt, finalThinking, finalText)
+		config.Logger.Debug("[non_stream] recording stats", "inputTokens", inputTokens, "outputTokens", outputTokens)
 		h.Pool.RecordRequest(int64(inputTokens), int64(outputTokens), 0)
 	}
 	writeJSON(w, http.StatusOK, respBody)
@@ -267,6 +268,7 @@ func (h *Handler) handleStream(w http.ResponseWriter, r *http.Request, resp *htt
 			historySession.success(http.StatusOK, streamRuntime.finalThinking, streamRuntime.finalText, streamRuntime.finalFinishReason, streamRuntime.finalUsage)
 			if h.Pool != nil {
 				inputTokens, outputTokens := openaifmt.ExtractTokenUsage(finalPrompt, streamRuntime.finalThinking, streamRuntime.finalText)
+				config.Logger.Debug("[stream] recording stats", "inputTokens", inputTokens, "outputTokens", outputTokens)
 				h.Pool.RecordRequest(int64(inputTokens), int64(outputTokens), 0)
 			}
 		},
