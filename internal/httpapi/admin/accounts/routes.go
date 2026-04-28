@@ -12,10 +12,10 @@ import (
 func RegisterRoutes(r chi.Router, h *Handler) {
 	r.Get("/accounts", h.listAccounts)
 	r.Post("/accounts", h.addAccount)
+	r.Get("/statistics", h.statistics)
 	r.Put("/accounts/{identifier}", h.updateAccount)
 	r.Delete("/accounts/{identifier}", h.deleteAccount)
 	r.Get("/queue/status", h.queueStatus)
-	r.Get("/statistics", h.statistics)
 	r.Post("/accounts/{identifier}/pause", h.pauseAccount)
 	r.Post("/accounts/test", h.testSingleAccount)
 	r.Post("/accounts/test-all", h.testAllAccounts)

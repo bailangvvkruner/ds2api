@@ -16,9 +16,14 @@ export default function StatisticsPanel({ apiFetch, t }) {
         const fetchStats = async () => {
             try {
                 const res = await apiFetch('/admin/accounts/statistics')
+                console.log('Statistics API response:', res.status, res.statusText)
                 if (res.ok) {
                     const data = await res.json()
+                    console.log('Statistics data:', data)
                     setStats(data)
+                } else {
+                    const text = await res.text()
+                    console.error('Statistics API error:', text)
                 }
             } catch (e) {
                 console.error('Failed to fetch statistics:', e)
