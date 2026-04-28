@@ -6,31 +6,31 @@ export default function StatisticsPanel({ apiFetch, t }) {
     const [loading, setLoading] = useState(true)
 
     const formatNumber = (num) => {
-        if (num === undefined || num === null) return '-'
+        if (num === undefined || num === null) return '0'
         if (num >= 1000000) return (num / 1000000).toFixed(2) + 'M'
         if (num >= 1000) return (num / 1000).toFixed(1) + 'K'
         return num.toString()
     }
 
-    const fetchStats = async () => {
-        try {
-            const res = await apiFetch('/admin/statistics')
-            if (res.ok) {
-                const data = await res.json()
-                setStats(data)
-            }
-        } catch (e) {
-            console.error('Failed to fetch statistics:', e)
-        } finally {
-            setLoading(false)
-        }
-    }
-
     useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                const res = await apiFetch('/admin/statistics')
+                if (res.ok) {
+                    const data = await res.json()
+                    setStats(data)
+                }
+            } catch (e) {
+                console.error('Failed to fetch statistics:', e)
+            } finally {
+                setLoading(false)
+            }
+        }
+
         fetchStats()
         const interval = setInterval(fetchStats, 10000)
         return () => clearInterval(interval)
-    }, [])
+    }, [apiFetch])
 
     if (loading) {
         return (
@@ -46,7 +46,16 @@ export default function StatisticsPanel({ apiFetch, t }) {
     }
 
     if (!stats) {
-        return null
+        return (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {[1, 2, 3, 4].map(i => (
+                    <div key={i} className="bg-card border border-border rounded-xl p-4">
+                        <p className="text-xs text-muted-foreground">{i === 0 ? t('statistics.todayRequests') : i === 1 ? t('statistics.todayTokens') : i === 2 ? t('statistics.totalTokens') : t('statistics.performance')}</p>
+                        <p className="text-2xl font-bold text-muted-foreground mt-2">-</p>
+                    </div>
+                ))}
+            </div>
+        )
     }
 
     const cards = [
