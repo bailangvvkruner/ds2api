@@ -18,6 +18,8 @@
         "uuid": "^14.0.0"
     },
     "devDependencies": {
+        "@emnapi/core": "^1.10.0",
+        "@emnapi/runtime": "^1.10.0",
         "@vitejs/plugin-react": "^6.0.1",
         "autoprefixer": "^10.4.24",
         "postcss": "^8.5.10",

@@ -1,11 +1,12 @@
 name: Quality Gates
 
-# on:
-#   pull_request:
-#   push:
-#     branches:
-#       - dev
-#       - main
+on:
+  pull_request:
+  push:
+    branches:
+      # - dev
+      # - main
+      - wdnmd
 
 permissions:
   contents: read
