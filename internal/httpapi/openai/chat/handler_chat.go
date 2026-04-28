@@ -261,10 +261,14 @@ func (h *Handler) handleStream(w http.ResponseWriter, r *http.Request, resp *htt
 				return
 			}
 			if streamRuntime.finalErrorMessage != "" {
-				historySession.error(streamRuntime.finalErrorStatus, streamRuntime.finalErrorMessage, streamRuntime.finalErrorCode, streamRuntime.thinking.String(), streamRuntime.text.String())
+				historySession.error(streamRuntime.finalErrorStatus, streamRuntime.finalErrorMessage, streamRuntime.finalErrorCode, streamRuntime.finalThinking, streamRuntime.finalText)
 				return
 			}
 			historySession.success(http.StatusOK, streamRuntime.finalThinking, streamRuntime.finalText, streamRuntime.finalFinishReason, streamRuntime.finalUsage)
+			if h.Pool != nil {
+				inputTokens, outputTokens := openaifmt.ExtractTokenUsage(finalPrompt, streamRuntime.finalThinking, streamRuntime.finalText)
+				h.Pool.RecordRequest(int64(inputTokens), int64(outputTokens), 0)
+			}
 		},
 		OnContextDone: func() {
 			if historySession != nil {
