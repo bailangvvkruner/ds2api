@@ -18,6 +18,8 @@ import (
 )
 
 func (h *Handler) ChatCompletions(w http.ResponseWriter, r *http.Request) {
+	startTime := time.Now()
+
 	if isVercelStreamReleaseRequest(r) {
 		h.handleVercelStreamRelease(w, r)
 		return
@@ -105,10 +107,10 @@ func (h *Handler) ChatCompletions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if stdReq.Stream {
-		h.handleStream(w, r, resp, sessionID, stdReq.ResponseModel, stdReq.FinalPrompt, stdReq.Thinking, stdReq.Search, stdReq.ToolNames, historySession)
+		h.handleStream(w, r, resp, sessionID, stdReq.ResponseModel, stdReq.FinalPrompt, stdReq.Thinking, stdReq.Search, stdReq.ToolNames, historySession, startTime)
 		return
 	}
-	h.handleNonStream(w, resp, sessionID, stdReq.ResponseModel, stdReq.FinalPrompt, stdReq.Thinking, stdReq.Search, stdReq.ToolNames, historySession)
+	h.handleNonStream(w, resp, sessionID, stdReq.ResponseModel, stdReq.FinalPrompt, stdReq.Thinking, stdReq.Search, stdReq.ToolNames, historySession, startTime)
 }
 
 func (h *Handler) autoDeleteRemoteSession(ctx context.Context, a *auth.RequestAuth, sessionID string) {
@@ -144,7 +146,7 @@ func (h *Handler) autoDeleteRemoteSession(ctx context.Context, a *auth.RequestAu
 	}
 }
 
-func (h *Handler) handleNonStream(w http.ResponseWriter, resp *http.Response, completionID, model, finalPrompt string, thinkingEnabled, searchEnabled bool, toolNames []string, historySession *chatHistorySession) {
+func (h *Handler) handleNonStream(w http.ResponseWriter, resp *http.Response, completionID, model, finalPrompt string, thinkingEnabled, searchEnabled bool, toolNames []string, historySession *chatHistorySession, startTime time.Time) {
 	if resp.StatusCode != http.StatusOK {
 		defer func() { _ = resp.Body.Close() }()
 		body, _ := io.ReadAll(resp.Body)
@@ -182,13 +184,13 @@ func (h *Handler) handleNonStream(w http.ResponseWriter, resp *http.Response, co
 	}
 	if h.Pool != nil {
 		inputTokens, outputTokens := openaifmt.ExtractTokenUsage(finalPrompt, finalThinking, finalText)
-		config.Logger.Debug("[non_stream] recording stats", "inputTokens", inputTokens, "outputTokens", outputTokens)
-		h.Pool.RecordRequest(int64(inputTokens), int64(outputTokens), 0)
+		responseTime := time.Since(startTime).Seconds()
+		h.Pool.RecordRequest(int64(inputTokens), int64(outputTokens), responseTime)
 	}
 	writeJSON(w, http.StatusOK, respBody)
 }
 
-func (h *Handler) handleStream(w http.ResponseWriter, r *http.Request, resp *http.Response, completionID, model, finalPrompt string, thinkingEnabled, searchEnabled bool, toolNames []string, historySession *chatHistorySession) {
+func (h *Handler) handleStream(w http.ResponseWriter, r *http.Request, resp *http.Response, completionID, model, finalPrompt string, thinkingEnabled, searchEnabled bool, toolNames []string, historySession *chatHistorySession, startTime time.Time) {
 	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
@@ -268,8 +270,8 @@ func (h *Handler) handleStream(w http.ResponseWriter, r *http.Request, resp *htt
 			historySession.success(http.StatusOK, streamRuntime.finalThinking, streamRuntime.finalText, streamRuntime.finalFinishReason, streamRuntime.finalUsage)
 			if h.Pool != nil {
 				inputTokens, outputTokens := openaifmt.ExtractTokenUsage(finalPrompt, streamRuntime.finalThinking, streamRuntime.finalText)
-				config.Logger.Debug("[stream] recording stats", "inputTokens", inputTokens, "outputTokens", outputTokens)
-				h.Pool.RecordRequest(int64(inputTokens), int64(outputTokens), 0)
+				responseTime := time.Since(startTime).Seconds()
+				h.Pool.RecordRequest(int64(inputTokens), int64(outputTokens), responseTime)
 			}
 		},
 		OnContextDone: func() {

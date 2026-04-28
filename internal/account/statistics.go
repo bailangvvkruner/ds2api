@@ -3,8 +3,6 @@ package account
 import (
 	"sync"
 	"time"
-
-	"ds2api/internal/config"
 )
 
 type Stats struct {
@@ -33,8 +31,6 @@ func NewStats() *Stats {
 func (s *Stats) RecordRequest(inputTokens, outputTokens int64, responseTime float64) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-
-	config.Logger.Debug("[stats] RecordRequest called", "inputTokens", inputTokens, "outputTokens", outputTokens, "responseTime", responseTime)
 
 	now := time.Now()
 	if now.Day() != s.lastResetDay {
