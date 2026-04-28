@@ -15,7 +15,7 @@ export default function StatisticsPanel({ apiFetch, t }) {
     useEffect(() => {
         const fetchStats = async () => {
             try {
-                const res = await apiFetch('/admin/statistics')
+                const res = await apiFetch('/admin/accounts/statistics')
                 if (res.ok) {
                     const data = await res.json()
                     setStats(data)
