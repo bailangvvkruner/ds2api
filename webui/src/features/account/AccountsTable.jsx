@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ChevronLeft, ChevronRight, Check, Copy, Pencil, Play, Plus, Trash2, FolderX } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Check, Copy, Pencil, Play, Plus, Trash2, FolderX, Pause, PlayCircle } from 'lucide-react'
 import clsx from 'clsx'
 
 export default function AccountsTable({
@@ -12,6 +12,7 @@ export default function AccountsTable({
     sessionCounts,
     deletingSessions,
     updatingProxy,
+    pausingAccount,
     totalAccounts,
     page,
     pageSize,
@@ -25,6 +26,7 @@ export default function AccountsTable({
     onDeleteAccount,
     onDeleteAllSessions,
     onUpdateAccountProxy,
+    onPauseAccount,
     onPrevPage,
     onNextPage,
     onPageSizeChange,
@@ -134,6 +136,11 @@ export default function AccountsTable({
                                             <div className="text-xs text-muted-foreground truncate mt-0.5">{acc.remark}</div>
                                         )}
                                         <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                                            {acc.paused && (
+                                                <span className="font-medium bg-amber-500/10 text-amber-500 px-1.5 py-0.5 rounded text-[10px]">
+                                                    {t('accountManager.accountPaused')}
+                                                </span>
+                                            )}
                                             <span>{acc.test_status === 'failed' ? t('accountManager.testStatusFailed') : isActive ? t('accountManager.sessionActive') : runtimeUnknown ? t('accountManager.runtimeStatusUnknown') : t('accountManager.reauthRequired')}</span>
                                             {acc.token_preview && (
                                                 <span className="font-mono bg-muted px-1.5 py-0.5 rounded text-[10px]">
@@ -189,9 +196,36 @@ export default function AccountsTable({
                                     >
                                         <Pencil className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
                                     </button>
+                                    {acc.paused ? (
+                                        <button
+                                            onClick={() => onPauseAccount(id, false)}
+                                            disabled={pausingAccount[id]}
+                                            className="p-1 lg:p-1.5 text-muted-foreground hover:text-emerald-500 hover:bg-emerald-500/10 rounded-md transition-colors disabled:opacity-40"
+                                            title={t('accountManager.resumeAccount')}
+                                        >
+                                            {pausingAccount[id] ? (
+                                                <span className="animate-spin w-3.5 h-3.5 lg:w-4 lg:h-4 inline-block">⟳</span>
+                                            ) : (
+                                                <PlayCircle className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
+                                            )}
+                                        </button>
+                                    ) : (
+                                        <button
+                                            onClick={() => onPauseAccount(id, true)}
+                                            disabled={pausingAccount[id]}
+                                            className="p-1 lg:p-1.5 text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10 rounded-md transition-colors disabled:opacity-40"
+                                            title={t('accountManager.pauseAccount')}
+                                        >
+                                            {pausingAccount[id] ? (
+                                                <span className="animate-spin w-3.5 h-3.5 lg:w-4 lg:h-4 inline-block">⟳</span>
+                                            ) : (
+                                                <Pause className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
+                                            )}
+                                        </button>
+                                    )}
                                     <button
                                         onClick={() => onTestAccount(id)}
-                                        disabled={testing[id]}
+                                        disabled={testing[id] || acc.paused}
                                         className="px-2 lg:px-3 py-1 lg:py-1.5 text-[10px] lg:text-xs font-medium border border-border rounded-md hover:bg-secondary transition-colors disabled:opacity-50"
                                     >
                                         {testing[id] ? t('actions.testing') : t('actions.test')}

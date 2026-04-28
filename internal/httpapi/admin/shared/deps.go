@@ -15,6 +15,7 @@ type ConfigStore interface {
 	Keys() []string
 	Accounts() []config.Account
 	FindAccount(identifier string) (config.Account, bool)
+	IsAccountPaused(identifier string) bool
 	UpdateAccountToken(identifier, token string) error
 	UpdateAccountTestStatus(identifier, status string) error
 	AccountTestStatus(identifier string) (string, bool)
@@ -47,6 +48,7 @@ type PoolController interface {
 	Reset()
 	Status() map[string]any
 	ApplyRuntimeLimits(maxInflightPerAccount, maxQueueSize, globalMaxInflight int)
+	GetStatistics() map[string]any
 }
 
 type OpenAIChatCaller interface {

@@ -7,6 +7,7 @@ import AccountsTable from './AccountsTable'
 import AddKeyModal from './AddKeyModal'
 import AddAccountModal from './AddAccountModal'
 import EditAccountModal from './EditAccountModal'
+import StatisticsPanel from './StatisticsPanel'
 
 export default function AccountManagerContainer({ config, onRefresh, onMessage, authFetch }) {
     const { t } = useI18n()
@@ -57,6 +58,7 @@ export default function AccountManagerContainer({ config, onRefresh, onMessage, 
         sessionCounts,
         deletingSessions,
         updatingProxy,
+        pausingAccount,
         addKey,
         deleteKey,
         addAccount,
@@ -66,6 +68,7 @@ export default function AccountManagerContainer({ config, onRefresh, onMessage, 
         testAllAccounts,
         deleteAllSessions,
         updateAccountProxy,
+        pauseAccount,
     } = useAccountActions({
         apiFetch,
         t,
@@ -101,6 +104,8 @@ export default function AccountManagerContainer({ config, onRefresh, onMessage, 
 
             <QueueCards queueStatus={queueStatus} t={t} />
 
+            <StatisticsPanel apiFetch={apiFetch} t={t} />
+
             <ApiKeysPanel
                 t={t}
                 config={config}
@@ -123,6 +128,7 @@ export default function AccountManagerContainer({ config, onRefresh, onMessage, 
                 sessionCounts={sessionCounts}
                 deletingSessions={deletingSessions}
                 updatingProxy={updatingProxy}
+                pausingAccount={pausingAccount}
                 totalAccounts={totalAccounts}
                 page={page}
                 pageSize={pageSize}
@@ -136,6 +142,7 @@ export default function AccountManagerContainer({ config, onRefresh, onMessage, 
                 onDeleteAccount={deleteAccount}
                 onDeleteAllSessions={deleteAllSessions}
                 onUpdateAccountProxy={updateAccountProxy}
+                onPauseAccount={pauseAccount}
                 onPrevPage={() => fetchAccounts(page - 1)}
                 onNextPage={() => fetchAccounts(page + 1)}
                 onPageSizeChange={changePageSize}

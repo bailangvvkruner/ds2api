@@ -158,6 +158,16 @@ func (s *Store) FindAccount(identifier string) (Account, bool) {
 	return Account{}, false
 }
 
+func (s *Store) IsAccountPaused(identifier string) bool {
+	identifier = strings.TrimSpace(identifier)
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	if idx, ok := s.findAccountIndexLocked(identifier); ok {
+		return s.cfg.Accounts[idx].Paused
+	}
+	return false
+}
+
 func (s *Store) UpdateAccountTestStatus(identifier, status string) error {
 	identifier = strings.TrimSpace(identifier)
 	s.mu.Lock()

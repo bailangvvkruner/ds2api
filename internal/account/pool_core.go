@@ -130,3 +130,7 @@ func (p *Pool) Status() map[string]any {
 		"max_queue_size":           p.maxQueueSize,
 	}
 }
+
+func (p *Pool) GetStatistics() map[string]any {
+	return GetStatistics()
+}

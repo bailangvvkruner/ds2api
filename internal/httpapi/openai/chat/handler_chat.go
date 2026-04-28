@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"ds2api/internal/account"
 	"ds2api/internal/auth"
 	"ds2api/internal/config"
 	dsprotocol "ds2api/internal/deepseek/protocol"
@@ -15,7 +16,12 @@ import (
 	"ds2api/internal/promptcompat"
 	"ds2api/internal/sse"
 	streamengine "ds2api/internal/stream"
+	"ds2api/internal/util"
 )
+
+func toInt(v any) int {
+	return util.IntFrom(v)
+}
 
 func (h *Handler) ChatCompletions(w http.ResponseWriter, r *http.Request) {
 	if isVercelStreamReleaseRequest(r) {
@@ -183,8 +189,14 @@ func (h *Handler) handleNonStream(w http.ResponseWriter, resp *http.Response, co
 			finishReason = fr
 		}
 	}
+	usage := openaifmt.BuildChatUsage(finalPrompt, finalThinking, finalText)
 	if historySession != nil {
-		historySession.success(http.StatusOK, finalThinking, finalText, finishReason, openaifmt.BuildChatUsage(finalPrompt, finalThinking, finalText))
+		historySession.success(http.StatusOK, finalThinking, finalText, finishReason, usage)
+	}
+	if usage != nil {
+		inputTokens := toInt(usage["prompt_tokens"])
+		outputTokens := toInt(usage["completion_tokens"])
+		account.RecordRequest(int64(inputTokens), int64(outputTokens), 0)
 	}
 	writeJSON(w, http.StatusOK, respBody)
 }
@@ -258,6 +270,11 @@ func (h *Handler) handleStream(w http.ResponseWriter, r *http.Request, resp *htt
 				streamRuntime.finalize("content_filter", false)
 			} else {
 				streamRuntime.finalize("stop", false)
+			}
+			if streamRuntime.finalUsage != nil {
+				inputTokens := toInt(streamRuntime.finalUsage["prompt_tokens"])
+				outputTokens := toInt(streamRuntime.finalUsage["completion_tokens"])
+				account.RecordRequest(int64(inputTokens), int64(outputTokens), 0)
 			}
 			if historySession == nil {
 				return
