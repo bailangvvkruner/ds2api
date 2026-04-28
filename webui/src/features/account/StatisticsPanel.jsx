@@ -1,10 +1,6 @@
-import { useEffect, useState } from 'react'
-import { Activity, Zap, Clock, TrendingUp } from 'lucide-react'
+import { Activity, Zap, TrendingUp, Clock } from 'lucide-react'
 
-export default function StatisticsPanel({ apiFetch, t }) {
-    const [stats, setStats] = useState(null)
-    const [loading, setLoading] = useState(true)
-
+export default function StatisticsPanel({ queueStatus, t }) {
     const formatNumber = (num) => {
         if (num === undefined || num === null) return '0'
         if (num >= 1000000) return (num / 1000000).toFixed(2) + 'M'
@@ -12,56 +8,7 @@ export default function StatisticsPanel({ apiFetch, t }) {
         return num.toString()
     }
 
-    useEffect(() => {
-        const fetchStats = async () => {
-            try {
-                const res = await apiFetch('/admin/accounts/statistics')
-                console.log('Statistics API response:', res.status, res.statusText)
-                if (res.ok) {
-                    const data = await res.json()
-                    console.log('Statistics data:', data)
-                    setStats(data)
-                } else {
-                    const text = await res.text()
-                    console.error('Statistics API error:', text)
-                }
-            } catch (e) {
-                console.error('Failed to fetch statistics:', e)
-            } finally {
-                setLoading(false)
-            }
-        }
-
-        fetchStats()
-        const interval = setInterval(fetchStats, 10000)
-        return () => clearInterval(interval)
-    }, [apiFetch])
-
-    if (loading) {
-        return (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {[1, 2, 3, 4].map(i => (
-                    <div key={i} className="bg-card border border-border rounded-xl p-4 animate-pulse">
-                        <div className="h-4 bg-muted rounded w-24 mb-2"></div>
-                        <div className="h-8 bg-muted rounded w-16"></div>
-                    </div>
-                ))}
-            </div>
-        )
-    }
-
-    if (!stats) {
-        return (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {[1, 2, 3, 4].map(i => (
-                    <div key={i} className="bg-card border border-border rounded-xl p-4">
-                        <p className="text-xs text-muted-foreground">{i === 0 ? t('statistics.todayRequests') : i === 1 ? t('statistics.todayTokens') : i === 2 ? t('statistics.totalTokens') : t('statistics.performance')}</p>
-                        <p className="text-2xl font-bold text-muted-foreground mt-2">-</p>
-                    </div>
-                ))}
-            </div>
-        )
-    }
+    const stats = queueStatus || {}
 
     const cards = [
         {

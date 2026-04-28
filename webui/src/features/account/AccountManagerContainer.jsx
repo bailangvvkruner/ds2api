@@ -104,7 +104,7 @@ export default function AccountManagerContainer({ config, onRefresh, onMessage, 
 
             <QueueCards queueStatus={queueStatus} t={t} />
 
-            <StatisticsPanel apiFetch={apiFetch} t={t} />
+            <StatisticsPanel queueStatus={queueStatus} t={t} />
 
             <ApiKeysPanel
                 t={t}

@@ -3,6 +3,7 @@ package account
 import (
 	"sort"
 	"sync"
+	"time"
 
 	"ds2api/internal/config"
 )
@@ -117,7 +118,7 @@ func (p *Pool) Status() map[string]any {
 		}
 	}
 	sort.Strings(inUseAccounts)
-	return map[string]any{
+	status := map[string]any{
 		"available":                len(available),
 		"in_use":                   inUseSlots,
 		"total":                    len(p.store.Accounts()),
@@ -129,8 +130,37 @@ func (p *Pool) Status() map[string]any {
 		"waiting":                  len(p.waiters),
 		"max_queue_size":           p.maxQueueSize,
 	}
-}
 
-func (p *Pool) GetStatistics() map[string]any {
-	return GetStatistics()
+	globalStats.mu.Lock()
+	now := time.Now()
+	if now.Sub(globalStats.TodayStartTime) >= 24*time.Hour {
+		status["today_requests"] = int64(0)
+		status["today_input_tokens"] = int64(0)
+		status["today_output_tokens"] = int64(0)
+		status["total_input_tokens"] = globalStats.TotalInputTokens
+		status["total_output_tokens"] = globalStats.TotalOutputTokens
+		status["rpm"] = int64(0)
+		status["tpm"] = int64(0)
+		status["avg_response_time"] = 0.0
+	} else {
+		var avgResponseTime float64
+		if len(globalStats.RecentRequests) > 0 {
+			var total int64
+			for _, r := range globalStats.RecentRequests {
+				total += r.Duration.Milliseconds()
+			}
+			avgResponseTime = float64(total) / float64(len(globalStats.RecentRequests)) / 1000.0
+		}
+		status["today_requests"] = globalStats.TodayRequests
+		status["today_input_tokens"] = globalStats.TodayInputTokens
+		status["today_output_tokens"] = globalStats.TodayOutputTokens
+		status["total_input_tokens"] = globalStats.TotalInputTokens
+		status["total_output_tokens"] = globalStats.TotalOutputTokens
+		status["rpm"] = int64(len(globalStats.RPMWindow))
+		status["tpm"] = globalStats.GetTPM()
+		status["avg_response_time"] = avgResponseTime
+	}
+	globalStats.mu.Unlock()
+
+	return status
 }

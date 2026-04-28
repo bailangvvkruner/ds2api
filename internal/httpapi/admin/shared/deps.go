@@ -48,7 +48,6 @@ type PoolController interface {
 	Reset()
 	Status() map[string]any
 	ApplyRuntimeLimits(maxInflightPerAccount, maxQueueSize, globalMaxInflight int)
-	GetStatistics() map[string]any
 }
 
 type OpenAIChatCaller interface {
