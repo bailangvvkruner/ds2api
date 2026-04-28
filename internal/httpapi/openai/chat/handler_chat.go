@@ -186,7 +186,7 @@ func (h *Handler) handleNonStream(w http.ResponseWriter, resp *http.Response, co
 		historySession.success(http.StatusOK, historyThinkingForArchive(turn.RawThinking, turn.DetectionThinking, turn.Thinking), historyTextForArchive(turn.RawText, turn.Text), outcome.FinishReason, assistantturn.OpenAIChatUsage(turn))
 	}
 	if h.Pool != nil {
-		inputTokens, outputTokens := openaifmt.ExtractTokenUsage(finalPrompt, finalThinking, finalText)
+		inputTokens, outputTokens := openaifmt.ExtractTokenUsage(finalPrompt, turn.Thinking, turn.Text)
 		h.Pool.RecordRequest(int64(inputTokens), int64(outputTokens), 0)
 	}
 	writeJSON(w, http.StatusOK, respBody)
@@ -266,14 +266,18 @@ func (h *Handler) handleStream(w http.ResponseWriter, r *http.Request, resp *htt
 				streamRuntime.finalize("stop", false)
 			}
 			if historySession == nil {
-				return
-			}
-			if streamRuntime.finalErrorMessage != "" {
-				historySession.error(streamRuntime.finalErrorStatus, streamRuntime.finalErrorMessage, streamRuntime.finalErrorCode, streamRuntime.historyThinking(), streamRuntime.historyText())
-				return
-			}
-			historySession.success(http.StatusOK, streamRuntime.historyThinking(), streamRuntime.historyText(), streamRuntime.finalFinishReason, streamRuntime.finalUsage)
-		},
+			return
+		}
+		if streamRuntime.finalErrorMessage != "" {
+			historySession.error(streamRuntime.finalErrorStatus, streamRuntime.finalErrorMessage, streamRuntime.finalErrorCode, streamRuntime.historyThinking(), streamRuntime.historyText())
+			return
+		}
+		historySession.success(http.StatusOK, streamRuntime.historyThinking(), streamRuntime.historyText(), streamRuntime.finalFinishReason, streamRuntime.finalUsage)
+		if h.Pool != nil {
+			inputTokens, outputTokens := openaifmt.ExtractTokenUsage(finalPrompt, streamRuntime.historyThinking(), streamRuntime.historyText())
+			h.Pool.RecordRequest(int64(inputTokens), int64(outputTokens), 0)
+		}
+	},
 		OnContextDone: func() {
 			streamRuntime.markContextCancelled()
 			if historySession != nil {
