@@ -220,6 +220,18 @@ func (s *Store) UpdateAccountToken(identifier, token string) error {
 	return s.saveLocked()
 }
 
+func (s *Store) UpdateAccountPaused(identifier string, paused bool) error {
+	identifier = strings.TrimSpace(identifier)
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	idx, ok := s.findAccountIndexLocked(identifier)
+	if !ok {
+		return errors.New("account not found")
+	}
+	s.cfg.Accounts[idx].Paused = paused
+	return s.saveLocked()
+}
+
 func (s *Store) Replace(cfg Config) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()

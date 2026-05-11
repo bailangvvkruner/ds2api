@@ -7,19 +7,7 @@ type usageEvent struct {
 	Tokens int
 }
 
-type AccountMetrics struct {
-	TodayRequests     int   `json:"today_requests"`
-	TodayInputTokens  int64 `json:"today_input_tokens"`
-	TodayOutputTokens int64 `json:"today_output_tokens"`
-	TotalInputTokens  int64 `json:"total_input_tokens"`
-	TotalOutputTokens int64 `json:"total_output_tokens"`
-	RPM               int   `json:"rpm"`
-	TPM               int   `json:"tpm"`
-	AverageResponseMs int64 `json:"average_response_ms"`
-	AverageTimeMs     int64 `json:"average_time_ms"`
-}
-
-type accountMetricsState struct {
+type Metrics struct {
 	day               string
 	todayRequests     int
 	todayInputTokens  int64
@@ -32,31 +20,11 @@ type accountMetricsState struct {
 	events            []usageEvent
 }
 
-func (p *Pool) SetPaused(accountID string, paused bool) bool {
-	if accountID == "" {
-		return false
-	}
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	if _, ok := p.store.FindAccount(accountID); !ok {
-		return false
-	}
-	if p.paused == nil {
-		p.paused = map[string]bool{}
-	}
-	if paused {
-		p.paused[accountID] = true
-	} else {
-		delete(p.paused, accountID)
-	}
-	p.notifyWaiterLocked()
-	return true
+func NewMetrics() *Metrics {
+	return &Metrics{day: time.Now().Local().Format("2006-01-02")}
 }
 
-func (p *Pool) RecordUsage(accountID string, inputTokens, outputTokens int, elapsed time.Duration) {
-	if accountID == "" {
-		return
-	}
+func (p *Pool) RecordUsage(_ string, inputTokens, outputTokens int, elapsed time.Duration) {
 	if inputTokens < 0 {
 		inputTokens = 0
 	}
@@ -67,34 +35,33 @@ func (p *Pool) RecordUsage(accountID string, inputTokens, outputTokens int, elap
 		elapsed = 0
 	}
 	now := time.Now()
-	day := now.Local().Format("2006-01-02")
 	p.mu.Lock()
 	defer p.mu.Unlock()
+	p.recordUsageLocked(now, inputTokens, outputTokens, elapsed)
+}
+
+func (p *Pool) recordUsageLocked(now time.Time, inputTokens, outputTokens int, elapsed time.Duration) {
 	if p.metrics == nil {
-		p.metrics = map[string]*accountMetricsState{}
+		p.metrics = NewMetrics()
 	}
-	m := p.metrics[accountID]
-	if m == nil {
-		m = &accountMetricsState{day: day}
-		p.metrics[accountID] = m
+	day := now.Local().Format("2006-01-02")
+	if p.metrics.day != day {
+		p.metrics.day = day
+		p.metrics.todayRequests = 0
+		p.metrics.todayInputTokens = 0
+		p.metrics.todayOutputTokens = 0
 	}
-	if m.day != day {
-		m.day = day
-		m.todayRequests = 0
-		m.todayInputTokens = 0
-		m.todayOutputTokens = 0
-	}
-	m.todayRequests++
-	m.todayInputTokens += int64(inputTokens)
-	m.todayOutputTokens += int64(outputTokens)
-	m.totalInputTokens += int64(inputTokens)
-	m.totalOutputTokens += int64(outputTokens)
-	m.completedRequests++
+	p.metrics.todayRequests++
+	p.metrics.todayInputTokens += int64(inputTokens)
+	p.metrics.todayOutputTokens += int64(outputTokens)
+	p.metrics.totalInputTokens += int64(inputTokens)
+	p.metrics.totalOutputTokens += int64(outputTokens)
+	p.metrics.completedRequests++
 	elapsedMs := elapsed.Milliseconds()
-	m.totalResponseMs += elapsedMs
-	m.totalTimeMs += elapsedMs
-	m.events = append(m.events, usageEvent{At: now, Tokens: inputTokens + outputTokens})
-	m.events = trimUsageEvents(now, m.events)
+	p.metrics.totalResponseMs += elapsedMs
+	p.metrics.totalTimeMs += elapsedMs
+	p.metrics.events = append(p.metrics.events, usageEvent{At: now, Tokens: inputTokens + outputTokens})
+	p.metrics.events = trimUsageEvents(now, p.metrics.events)
 }
 
 func trimUsageEvents(now time.Time, events []usageEvent) []usageEvent {
@@ -112,44 +79,40 @@ func trimUsageEvents(now time.Time, events []usageEvent) []usageEvent {
 	return out
 }
 
-func (p *Pool) metricsSnapshotLocked(accountID string, now time.Time) AccountMetrics {
+func (p *Pool) metricsStatusLocked(now time.Time) map[string]any {
 	if p.metrics == nil {
-		return AccountMetrics{}
-	}
-	m := p.metrics[accountID]
-	if m == nil {
-		return AccountMetrics{}
+		p.metrics = NewMetrics()
 	}
 	day := now.Local().Format("2006-01-02")
-	todayRequests := m.todayRequests
-	todayInputTokens := m.todayInputTokens
-	todayOutputTokens := m.todayOutputTokens
-	if m.day != day {
+	todayRequests := p.metrics.todayRequests
+	todayInputTokens := p.metrics.todayInputTokens
+	todayOutputTokens := p.metrics.todayOutputTokens
+	if p.metrics.day != day {
 		todayRequests = 0
 		todayInputTokens = 0
 		todayOutputTokens = 0
 	}
-	events := trimUsageEvents(now, m.events)
-	m.events = events
+	events := trimUsageEvents(now, p.metrics.events)
+	p.metrics.events = events
 	tpm := 0
 	for _, event := range events {
 		tpm += event.Tokens
 	}
-	avgResponseMs := int64(0)
-	avgTimeMs := int64(0)
-	if m.completedRequests > 0 {
-		avgResponseMs = m.totalResponseMs / m.completedRequests
-		avgTimeMs = m.totalTimeMs / m.completedRequests
+	averageResponseMs := int64(0)
+	averageTimeMs := int64(0)
+	if p.metrics.completedRequests > 0 {
+		averageResponseMs = p.metrics.totalResponseMs / p.metrics.completedRequests
+		averageTimeMs = p.metrics.totalTimeMs / p.metrics.completedRequests
 	}
-	return AccountMetrics{
-		TodayRequests:     todayRequests,
-		TodayInputTokens:  int64(todayInputTokens),
-		TodayOutputTokens: int64(todayOutputTokens),
-		TotalInputTokens:  m.totalInputTokens,
-		TotalOutputTokens: m.totalOutputTokens,
-		RPM:               len(events),
-		TPM:               tpm,
-		AverageResponseMs: avgResponseMs,
-		AverageTimeMs:     avgTimeMs,
+	return map[string]any{
+		"today_requests":      todayRequests,
+		"today_input_tokens":  todayInputTokens,
+		"today_output_tokens": todayOutputTokens,
+		"total_input_tokens":  p.metrics.totalInputTokens,
+		"total_output_tokens": p.metrics.totalOutputTokens,
+		"rpm":                 len(events),
+		"tpm":                 tpm,
+		"average_response_ms": averageResponseMs,
+		"average_time_ms":     averageTimeMs,
 	}
 }

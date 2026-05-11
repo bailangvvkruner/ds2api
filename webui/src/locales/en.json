@@ -176,16 +176,21 @@
         "resumeAccount": "Enable account",
         "pauseSuccess": "Account paused.",
         "resumeSuccess": "Account enabled.",
-        "todayRequests": "Today requests",
-        "todayTokens": "Today tokens in/out",
-        "totalTokens": "Total tokens in/out",
-        "performance": "Performance",
-        "average": "Avg response / avg time",
         "envModeRiskTitle": "Environment-variable config mode detected (persistence risk)",
         "envModeRiskDesc": "Detected DS2API_CONFIG_JSON. If DS2API_ENV_WRITEBACK is not enabled, Admin UI edits are in-memory only and may be lost after restart.",
         "envModeWritebackPendingTitle": "Env mode + auto-persistence enabled (pending file handoff)",
         "envModeWritebackActiveTitle": "Env mode + auto-persistence active",
         "envModeWritebackDesc": "The app will auto-create/write the config file and transition to file-backed mode. Current persistence path: {path}"
+    },
+    "statistics": {
+        "todayRequests": "Today requests",
+        "todayTokens": "Today tokens",
+        "totalTokens": "Total tokens",
+        "performance": "Performance",
+        "average": "Avg response / avg time",
+        "requestsUnit": "requests",
+        "inputOutput": "Input / output",
+        "responseTime": "response / total time"
     },
     "proxyManager": {
         "title": "Proxy IPs",

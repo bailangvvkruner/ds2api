@@ -15,6 +15,7 @@ type ConfigStore interface {
 	Keys() []string
 	Accounts() []config.Account
 	FindAccount(identifier string) (config.Account, bool)
+	UpdateAccountPaused(identifier string, paused bool) error
 	UpdateAccountToken(identifier, token string) error
 	UpdateAccountTestStatus(identifier, status string) error
 	AccountTestStatus(identifier string) (string, bool)
@@ -43,7 +44,6 @@ type ConfigStore interface {
 type PoolController interface {
 	Reset()
 	Status() map[string]any
-	SetPaused(accountID string, paused bool) bool
 	ApplyRuntimeLimits(maxInflightPerAccount, maxQueueSize, globalMaxInflight int)
 }
 

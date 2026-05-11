@@ -13,7 +13,6 @@ export default function AccountsTable({
     deletingSessions,
     updatingProxy,
     updatingPaused,
-    queueStatus,
     totalAccounts,
     page,
     pageSize,
@@ -43,9 +42,6 @@ export default function AccountsTable({
             setTimeout(() => setCopiedId(null), 1500)
         })
     }
-
-    const formatNumber = (value) => new Intl.NumberFormat().format(Number(value || 0))
-    const formatDuration = (ms) => `${Math.round(Number(ms || 0))}ms`
 
     return (
         <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
@@ -114,8 +110,7 @@ export default function AccountsTable({
                     accounts.map((acc, i) => {
                         const id = resolveAccountIdentifier(acc)
                         const assignedProxy = proxies.find(proxy => proxy.id === acc.proxy_id)
-                        const stats = queueStatus?.account_stats?.[id] || {}
-                        const paused = Boolean(stats.paused)
+                        const paused = Boolean(acc.paused)
                         const runtimeUnknown = envBacked && !acc.test_status
                         const isActive = !paused && (acc.test_status === 'ok' || acc.has_token)
                         return (
@@ -174,28 +169,6 @@ export default function AccountsTable({
                                                     {t('accountManager.proxyBadge', { name: assignedProxy ? (assignedProxy.name || `${assignedProxy.host}:${assignedProxy.port}`) : acc.proxy_id })}
                                                 </span>
                                             )}
-                                        </div>
-                                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mt-3 text-[10px] lg:text-xs">
-                                            <div className="rounded-md border border-border bg-muted/30 px-2 py-1">
-                                                <div className="text-muted-foreground">{t('accountManager.todayRequests')}</div>
-                                                <div className="font-medium">{formatNumber(stats.today_requests)}</div>
-                                            </div>
-                                            <div className="rounded-md border border-border bg-muted/30 px-2 py-1">
-                                                <div className="text-muted-foreground">{t('accountManager.todayTokens')}</div>
-                                                <div className="font-medium">{formatNumber(stats.today_input_tokens)} / {formatNumber(stats.today_output_tokens)}</div>
-                                            </div>
-                                            <div className="rounded-md border border-border bg-muted/30 px-2 py-1">
-                                                <div className="text-muted-foreground">{t('accountManager.performance')}</div>
-                                                <div className="font-medium">RPM {formatNumber(stats.rpm)} · TPM {formatNumber(stats.tpm)}</div>
-                                            </div>
-                                            <div className="rounded-md border border-border bg-muted/30 px-2 py-1">
-                                                <div className="text-muted-foreground">{t('accountManager.average')}</div>
-                                                <div className="font-medium">{formatDuration(stats.average_response_ms)} / {formatDuration(stats.average_time_ms)}</div>
-                                            </div>
-                                            <div className="col-span-2 lg:col-span-4 rounded-md border border-border bg-muted/30 px-2 py-1">
-                                                <div className="text-muted-foreground">{t('accountManager.totalTokens')}</div>
-                                                <div className="font-medium">{formatNumber(stats.total_input_tokens)} / {formatNumber(stats.total_output_tokens)}</div>
-                                            </div>
                                         </div>
                                     </div>
                                 </div>

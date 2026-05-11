@@ -176,16 +176,21 @@
         "resumeAccount": "启用账号",
         "pauseSuccess": "账号已暂停",
         "resumeSuccess": "账号已启用",
-        "todayRequests": "今日请求",
-        "todayTokens": "今日 Token 输入/输出",
-        "totalTokens": "累计 Token 输入/输出",
-        "performance": "性能指标",
-        "average": "平均响应 / 平均时间",
         "envModeRiskTitle": "当前为环境变量配置模式（有持久化风险）",
         "envModeRiskDesc": "检测到 DS2API_CONFIG_JSON。若未开启 DS2API_ENV_WRITEBACK，管理台改动仅在内存生效，重启可能丢失。",
         "envModeWritebackPendingTitle": "环境变量模式 + 自动持久化已开启（等待落盘）",
         "envModeWritebackActiveTitle": "环境变量模式 + 自动持久化已生效",
         "envModeWritebackDesc": "程序会自动创建/写入配置文件并在后续切换为文件模式。当前持久化路径：{path}"
+    },
+    "statistics": {
+        "todayRequests": "今日请求",
+        "todayTokens": "今日 Token",
+        "totalTokens": "累计 Token",
+        "performance": "性能指标",
+        "average": "平均响应 / 平均时间",
+        "requestsUnit": "请求",
+        "inputOutput": "输入 / 输出",
+        "responseTime": "响应 / 总耗时"
     },
     "proxyManager": {
         "title": "代理 IP",

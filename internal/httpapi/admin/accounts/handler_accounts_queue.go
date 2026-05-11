@@ -27,9 +27,14 @@ func (h *Handler) setAccountPaused(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]any{"detail": "paused must be boolean"})
 		return
 	}
-	if !h.Pool.SetPaused(identifier, paused) {
+	if _, ok := h.Store.FindAccount(identifier); !ok {
 		writeJSON(w, http.StatusNotFound, map[string]any{"detail": "账号不存在"})
 		return
 	}
+	if err := h.Store.UpdateAccountPaused(identifier, paused); err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]any{"detail": err.Error()})
+		return
+	}
+	h.Pool.Reset()
 	writeJSON(w, http.StatusOK, map[string]any{"success": true, "paused": paused})
 }

@@ -2,6 +2,7 @@ import { useI18n } from '../../i18n'
 import { useAccountsData } from './useAccountsData'
 import { useAccountActions } from './useAccountActions'
 import QueueCards from './QueueCards'
+import StatisticsPanel from './StatisticsPanel'
 import ApiKeysPanel from './ApiKeysPanel'
 import AccountsTable from './AccountsTable'
 import AddKeyModal from './AddKeyModal'
@@ -102,6 +103,7 @@ export default function AccountManagerContainer({ config, onRefresh, onMessage, 
             )}
 
             <QueueCards queueStatus={queueStatus} t={t} />
+            <StatisticsPanel queueStatus={queueStatus} t={t} />
 
             <ApiKeysPanel
                 t={t}
@@ -126,7 +128,6 @@ export default function AccountManagerContainer({ config, onRefresh, onMessage, 
                 deletingSessions={deletingSessions}
                 updatingProxy={updatingProxy}
                 updatingPaused={updatingPaused}
-                queueStatus={queueStatus}
                 totalAccounts={totalAccounts}
                 page={page}
                 pageSize={pageSize}
