@@ -40,6 +40,7 @@ func (h *Handler) handleNonStreamWithRetry(w http.ResponseWriter, ctx context.Co
 		ToolChoice:      promptcompat.DefaultToolChoicePolicy(),
 	}
 	retryEnabled := h != nil && h.DS != nil && emptyOutputRetryEnabled()
+	startedAt := time.Now()
 	result, outErr := completionruntime.ExecuteNonStreamStartedWithRetry(ctx, h.DS, a, completionruntime.StartResult{
 		SessionID: completionID,
 		Payload:   payload,
@@ -57,6 +58,9 @@ func (h *Handler) handleNonStreamWithRetry(w http.ResponseWriter, ctx context.Co
 		writeOpenAIErrorWithCode(w, outErr.Status, outErr.Message, outErr.Code)
 		return
 	}
+	if h.Auth != nil {
+		h.Auth.RecordUsage(a, result.Turn.Usage.InputTokens, result.Turn.Usage.OutputTokens, time.Since(startedAt))
+	}
 	respBody := openaifmt.BuildChatCompletionWithToolCalls(result.SessionID, model, result.Turn.Prompt, result.Turn.Thinking, result.Turn.Text, result.Turn.ToolCalls, toolsRaw)
 	respBody["usage"] = assistantturn.OpenAIChatUsage(result.Turn)
 	outcome := assistantturn.FinalizeTurn(result.Turn, assistantturn.FinalizeOptions{})
@@ -66,7 +70,7 @@ func (h *Handler) handleNonStreamWithRetry(w http.ResponseWriter, ctx context.Co
 	writeJSON(w, http.StatusOK, respBody)
 }
 
-func (h *Handler) handleStreamWithRetry(w http.ResponseWriter, r *http.Request, a *auth.RequestAuth, resp *http.Response, payload map[string]any, pow, completionID string, sessionIDRef *string, stdReq promptcompat.StandardRequest, model, finalPrompt string, refFileTokens int, thinkingEnabled, searchEnabled bool, toolNames []string, toolsRaw any, toolChoice promptcompat.ToolChoicePolicy, historySession *chatHistorySession) {
+func (h *Handler) handleStreamWithRetry(w http.ResponseWriter, r *http.Request, a *auth.RequestAuth, resp *http.Response, payload map[string]any, pow, completionID string, sessionIDRef *string, stdReq promptcompat.StandardRequest, model, finalPrompt string, refFileTokens int, thinkingEnabled, searchEnabled bool, toolNames []string, toolsRaw any, toolChoice promptcompat.ToolChoicePolicy, historySession *chatHistorySession, startedAt time.Time) {
 	streamRuntime, initialType, ok := h.prepareChatStreamRuntime(w, resp, completionID, model, finalPrompt, refFileTokens, thinkingEnabled, searchEnabled, toolNames, toolsRaw, toolChoice, historySession)
 	if !ok {
 		return
@@ -82,7 +86,7 @@ func (h *Handler) handleStreamWithRetry(w http.ResponseWriter, r *http.Request, 
 		CurrentInputFile: h.Store,
 	}, completionruntime.StreamRetryHooks{
 		ConsumeAttempt: func(currentResp *http.Response, allowDeferEmpty bool) (bool, bool) {
-			return h.consumeChatStreamAttempt(r, currentResp, streamRuntime, initialType, thinkingEnabled, historySession, allowDeferEmpty)
+			return h.consumeChatStreamAttempt(r, a, currentResp, streamRuntime, initialType, thinkingEnabled, historySession, allowDeferEmpty, startedAt)
 		},
 		Finalize: func(attempts int) {
 			streamRuntime.finalize("stop", false)
@@ -142,7 +146,7 @@ func (h *Handler) prepareChatStreamRuntime(w http.ResponseWriter, resp *http.Res
 	return streamRuntime, initialType, true
 }
 
-func (h *Handler) consumeChatStreamAttempt(r *http.Request, resp *http.Response, streamRuntime *chatStreamRuntime, initialType string, thinkingEnabled bool, historySession *chatHistorySession, allowDeferEmpty bool) (bool, bool) {
+func (h *Handler) consumeChatStreamAttempt(r *http.Request, a *auth.RequestAuth, resp *http.Response, streamRuntime *chatStreamRuntime, initialType string, thinkingEnabled bool, historySession *chatHistorySession, allowDeferEmpty bool, startedAt time.Time) (bool, bool) {
 	defer func() { _ = resp.Body.Close() }()
 	finalReason := "stop"
 	streamengine.ConsumeSSE(streamengine.ConsumeConfig{
@@ -179,10 +183,20 @@ func (h *Handler) consumeChatStreamAttempt(r *http.Request, resp *http.Response,
 	}
 	terminalWritten := streamRuntime.finalize(finalReason, allowDeferEmpty && finalReason != "content_filter")
 	if terminalWritten {
+		recordChatStreamUsage(h, a, streamRuntime, startedAt)
 		recordChatStreamHistory(streamRuntime, historySession)
 		return true, false
 	}
 	return false, true
+}
+
+func recordChatStreamUsage(h *Handler, a *auth.RequestAuth, streamRuntime *chatStreamRuntime, startedAt time.Time) {
+	if h == nil || h.Auth == nil || streamRuntime == nil || streamRuntime.finalErrorMessage != "" || streamRuntime.finalUsage == nil {
+		return
+	}
+	inputTokens, _ := streamRuntime.finalUsage["prompt_tokens"].(int)
+	outputTokens, _ := streamRuntime.finalUsage["completion_tokens"].(int)
+	h.Auth.RecordUsage(a, inputTokens, outputTokens, time.Since(startedAt))
 }
 
 func recordChatStreamHistory(streamRuntime *chatStreamRuntime, historySession *chatHistorySession) {

@@ -83,6 +83,7 @@ func (h *Handler) ChatCompletions(w http.ResponseWriter, r *http.Request) {
 	historySession := startChatHistory(h.ChatHistory, r, a, stdReq)
 
 	if !stdReq.Stream {
+		startedAt := time.Now()
 		result, outErr := completionruntime.ExecuteNonStreamWithRetry(r.Context(), h.DS, a, stdReq, completionruntime.Options{
 			RetryEnabled:     true,
 			CurrentInputFile: h.Store,
@@ -94,6 +95,9 @@ func (h *Handler) ChatCompletions(w http.ResponseWriter, r *http.Request) {
 			}
 			writeOpenAIErrorWithCode(w, outErr.Status, outErr.Message, outErr.Code)
 			return
+		}
+		if h.Auth != nil {
+			h.Auth.RecordUsage(a, result.Turn.Usage.InputTokens, result.Turn.Usage.OutputTokens, time.Since(startedAt))
 		}
 		respBody := openaifmt.BuildChatCompletionWithToolCalls(result.SessionID, stdReq.ResponseModel, result.Turn.Prompt, result.Turn.Thinking, result.Turn.Text, result.Turn.ToolCalls, stdReq.ToolsRaw)
 		respBody["usage"] = assistantturn.OpenAIChatUsage(result.Turn)
@@ -118,7 +122,8 @@ func (h *Handler) ChatCompletions(w http.ResponseWriter, r *http.Request) {
 	}
 	streamReq := start.Request
 	refFileTokens := streamReq.RefFileTokens
-	h.handleStreamWithRetry(w, r, a, start.Response, start.Payload, start.Pow, sessionID, &sessionID, streamReq, streamReq.ResponseModel, streamReq.PromptTokenText, refFileTokens, streamReq.Thinking, streamReq.Search, streamReq.ToolNames, streamReq.ToolsRaw, streamReq.ToolChoice, historySession)
+	startedAt := time.Now()
+	h.handleStreamWithRetry(w, r, a, start.Response, start.Payload, start.Pow, sessionID, &sessionID, streamReq, streamReq.ResponseModel, streamReq.PromptTokenText, refFileTokens, streamReq.Thinking, streamReq.Search, streamReq.ToolNames, streamReq.ToolsRaw, streamReq.ToolChoice, historySession, startedAt)
 }
 
 func (h *Handler) autoDeleteRemoteSession(ctx context.Context, a *auth.RequestAuth, sessionID string) {

@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 
@@ -38,7 +39,8 @@ func (managedFilesAuthStub) DetermineCaller(_ *http.Request) (*auth.RequestAuth,
 	}, nil
 }
 
-func (managedFilesAuthStub) Release(_ *auth.RequestAuth) {}
+func (managedFilesAuthStub) Release(_ *auth.RequestAuth)                                {}
+func (managedFilesAuthStub) RecordUsage(_ *auth.RequestAuth, _, _ int, _ time.Duration) {}
 
 type filesRouteDSStub struct {
 	lastReq dsclient.UploadFileRequest

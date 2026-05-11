@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	chimw "github.com/go-chi/chi/v5/middleware"
@@ -36,7 +37,8 @@ func (streamStatusAuthStub) DetermineCaller(_ *http.Request) (*auth.RequestAuth,
 	}, nil
 }
 
-func (streamStatusAuthStub) Release(_ *auth.RequestAuth) {}
+func (streamStatusAuthStub) Release(_ *auth.RequestAuth)                                {}
+func (streamStatusAuthStub) RecordUsage(_ *auth.RequestAuth, _, _ int, _ time.Duration) {}
 
 type streamStatusDSStub struct {
 	resp *http.Response

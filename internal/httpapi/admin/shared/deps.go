@@ -43,6 +43,7 @@ type ConfigStore interface {
 type PoolController interface {
 	Reset()
 	Status() map[string]any
+	SetPaused(accountID string, paused bool) bool
 	ApplyRuntimeLimits(maxInflightPerAccount, maxQueueSize, globalMaxInflight int)
 }
 

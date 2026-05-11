@@ -17,6 +17,7 @@ export function useAccountActions({ apiFetch, t, onMessage, onRefresh, config, f
     const [sessionCounts, setSessionCounts] = useState({})
     const [deletingSessions, setDeletingSessions] = useState({})
     const [updatingProxy, setUpdatingProxy] = useState({})
+    const [updatingPaused, setUpdatingPaused] = useState({})
 
     const openAddKey = () => {
         setEditingKey(null)
@@ -317,6 +318,32 @@ export function useAccountActions({ apiFetch, t, onMessage, onRefresh, config, f
         }
     }
 
+    const updateAccountPaused = async (identifier, paused) => {
+        const accountID = String(identifier || '').trim()
+        if (!accountID) {
+            onMessage('error', t('accountManager.invalidIdentifier'))
+            return
+        }
+        setUpdatingPaused(prev => ({ ...prev, [accountID]: true }))
+        try {
+            const res = await apiFetch(`/admin/accounts/${encodeURIComponent(accountID)}/paused`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ paused }),
+            })
+            const data = await res.json()
+            if (!res.ok) {
+                onMessage('error', data.detail || t('messages.requestFailed'))
+                return
+            }
+            onMessage('success', paused ? t('accountManager.pauseSuccess') : t('accountManager.resumeSuccess'))
+        } catch (_err) {
+            onMessage('error', t('messages.networkError'))
+        } finally {
+            setUpdatingPaused(prev => ({ ...prev, [accountID]: false }))
+        }
+    }
+
     const updateAccountProxy = async (identifier, proxyID) => {
         const accountID = String(identifier || '').trim()
         if (!accountID) {
@@ -373,6 +400,7 @@ export function useAccountActions({ apiFetch, t, onMessage, onRefresh, config, f
         sessionCounts,
         deletingSessions,
         updatingProxy,
+        updatingPaused,
         addKey,
         deleteKey,
         addAccount,
@@ -381,6 +409,7 @@ export function useAccountActions({ apiFetch, t, onMessage, onRefresh, config, f
         testAccount,
         testAllAccounts,
         deleteAllSessions,
+        updateAccountPaused,
         updateAccountProxy,
     }
 }

@@ -272,6 +272,8 @@ func (a *vercelReleaseAuthStub) Release(_ *auth.RequestAuth) {
 	}
 }
 
+func (a *vercelReleaseAuthStub) RecordUsage(_ *auth.RequestAuth, _, _ int, _ time.Duration) {}
+
 func TestHandleVercelStreamReleaseTriggersAutoDelete(t *testing.T) {
 	t.Setenv("VERCEL", "1")
 	t.Setenv("DS2API_VERCEL_INTERNAL_SECRET", "stream-secret")

@@ -227,6 +227,13 @@ func (r *Resolver) Release(a *RequestAuth) {
 	r.Pool.Release(a.AccountID)
 }
 
+func (r *Resolver) RecordUsage(a *RequestAuth, inputTokens, outputTokens int, elapsed time.Duration) {
+	if a == nil || !a.UseConfigToken || a.AccountID == "" || r == nil || r.Pool == nil {
+		return
+	}
+	r.Pool.RecordUsage(a.AccountID, inputTokens, outputTokens, elapsed)
+}
+
 func extractCallerToken(req *http.Request) string {
 	authHeader := strings.TrimSpace(req.Header.Get("Authorization"))
 	if strings.HasPrefix(strings.ToLower(authHeader), "bearer ") {

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ChevronLeft, ChevronRight, Check, Copy, Pencil, Play, Plus, Trash2, FolderX } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Check, Copy, Pause, Pencil, Play, Plus, RotateCcw, Trash2, FolderX } from 'lucide-react'
 import clsx from 'clsx'
 
 export default function AccountsTable({
@@ -12,6 +12,8 @@ export default function AccountsTable({
     sessionCounts,
     deletingSessions,
     updatingProxy,
+    updatingPaused,
+    queueStatus,
     totalAccounts,
     page,
     pageSize,
@@ -24,6 +26,7 @@ export default function AccountsTable({
     onTestAccount,
     onDeleteAccount,
     onDeleteAllSessions,
+    onUpdateAccountPaused,
     onUpdateAccountProxy,
     onPrevPage,
     onNextPage,
@@ -40,6 +43,10 @@ export default function AccountsTable({
             setTimeout(() => setCopiedId(null), 1500)
         })
     }
+
+    const formatNumber = (value) => new Intl.NumberFormat().format(Number(value || 0))
+    const formatDuration = (ms) => `${Math.round(Number(ms || 0))}ms`
+
     return (
         <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
             <div className="p-6 border-b border-border flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -107,13 +114,16 @@ export default function AccountsTable({
                     accounts.map((acc, i) => {
                         const id = resolveAccountIdentifier(acc)
                         const assignedProxy = proxies.find(proxy => proxy.id === acc.proxy_id)
+                        const stats = queueStatus?.account_stats?.[id] || {}
+                        const paused = Boolean(stats.paused)
                         const runtimeUnknown = envBacked && !acc.test_status
-                        const isActive = acc.test_status === 'ok' || acc.has_token
+                        const isActive = !paused && (acc.test_status === 'ok' || acc.has_token)
                         return (
                             <div key={i} className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-muted/50 transition-colors">
                                 <div className="flex items-center gap-3 min-w-0">
                                     <div className={clsx(
                                         "w-2 h-2 rounded-full shrink-0",
+                                        paused ? "bg-slate-400" :
                                         acc.test_status === 'failed' ? "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]" :
                                         isActive ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" :
                                         runtimeUnknown ? "bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]" : "bg-amber-500"
@@ -134,7 +144,7 @@ export default function AccountsTable({
                                             <div className="text-xs text-muted-foreground truncate mt-0.5">{acc.remark}</div>
                                         )}
                                         <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
-                                            <span>{acc.test_status === 'failed' ? t('accountManager.testStatusFailed') : isActive ? t('accountManager.sessionActive') : runtimeUnknown ? t('accountManager.runtimeStatusUnknown') : t('accountManager.reauthRequired')}</span>
+                                            <span>{paused ? t('accountManager.paused') : acc.test_status === 'failed' ? t('accountManager.testStatusFailed') : isActive ? t('accountManager.sessionActive') : runtimeUnknown ? t('accountManager.runtimeStatusUnknown') : t('accountManager.reauthRequired')}</span>
                                             {acc.token_preview && (
                                                 <span className="font-mono bg-muted px-1.5 py-0.5 rounded text-[10px]">
                                                     {acc.token_preview}
@@ -165,9 +175,42 @@ export default function AccountsTable({
                                                 </span>
                                             )}
                                         </div>
+                                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mt-3 text-[10px] lg:text-xs">
+                                            <div className="rounded-md border border-border bg-muted/30 px-2 py-1">
+                                                <div className="text-muted-foreground">{t('accountManager.todayRequests')}</div>
+                                                <div className="font-medium">{formatNumber(stats.today_requests)}</div>
+                                            </div>
+                                            <div className="rounded-md border border-border bg-muted/30 px-2 py-1">
+                                                <div className="text-muted-foreground">{t('accountManager.todayTokens')}</div>
+                                                <div className="font-medium">{formatNumber(stats.today_input_tokens)} / {formatNumber(stats.today_output_tokens)}</div>
+                                            </div>
+                                            <div className="rounded-md border border-border bg-muted/30 px-2 py-1">
+                                                <div className="text-muted-foreground">{t('accountManager.performance')}</div>
+                                                <div className="font-medium">RPM {formatNumber(stats.rpm)} · TPM {formatNumber(stats.tpm)}</div>
+                                            </div>
+                                            <div className="rounded-md border border-border bg-muted/30 px-2 py-1">
+                                                <div className="text-muted-foreground">{t('accountManager.average')}</div>
+                                                <div className="font-medium">{formatDuration(stats.average_response_ms)} / {formatDuration(stats.average_time_ms)}</div>
+                                            </div>
+                                            <div className="col-span-2 lg:col-span-4 rounded-md border border-border bg-muted/30 px-2 py-1">
+                                                <div className="text-muted-foreground">{t('accountManager.totalTokens')}</div>
+                                                <div className="font-medium">{formatNumber(stats.total_input_tokens)} / {formatNumber(stats.total_output_tokens)}</div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2 self-start lg:self-auto ml-5 lg:ml-0">
+                                    <button
+                                        onClick={() => onUpdateAccountPaused(id, !paused)}
+                                        disabled={!id || updatingPaused?.[id]}
+                                        className={clsx(
+                                            "p-1 lg:p-1.5 rounded-md transition-colors disabled:opacity-40 disabled:cursor-not-allowed",
+                                            paused ? "text-emerald-500 hover:bg-emerald-500/10" : "text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10"
+                                        )}
+                                        title={paused ? t('accountManager.resumeAccount') : t('accountManager.pauseAccount')}
+                                    >
+                                        {updatingPaused?.[id] ? <span className="animate-spin text-xs">⟳</span> : paused ? <RotateCcw className="w-3.5 h-3.5 lg:w-4 lg:h-4" /> : <Pause className="w-3.5 h-3.5 lg:w-4 lg:h-4" />}
+                                    </button>
                                     <select
                                         value={acc.proxy_id || ''}
                                         onChange={e => onUpdateAccountProxy(id, e.target.value)}

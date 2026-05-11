@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 
 	"ds2api/internal/auth"
 	dsclient "ds2api/internal/deepseek/client"
@@ -63,7 +64,8 @@ func (streamStatusAuthStub) DetermineCaller(_ *http.Request) (*auth.RequestAuth,
 	return (&streamStatusAuthStub{}).Determine(nil)
 }
 
-func (streamStatusAuthStub) Release(_ *auth.RequestAuth) {}
+func (streamStatusAuthStub) Release(_ *auth.RequestAuth)                                {}
+func (streamStatusAuthStub) RecordUsage(_ *auth.RequestAuth, _, _ int, _ time.Duration) {}
 
 type streamStatusManagedAuthStub struct{}
 
@@ -81,7 +83,8 @@ func (streamStatusManagedAuthStub) DetermineCaller(_ *http.Request) (*auth.Reque
 	return (&streamStatusManagedAuthStub{}).Determine(nil)
 }
 
-func (streamStatusManagedAuthStub) Release(_ *auth.RequestAuth) {}
+func (streamStatusManagedAuthStub) Release(_ *auth.RequestAuth)                                {}
+func (streamStatusManagedAuthStub) RecordUsage(_ *auth.RequestAuth, _, _ int, _ time.Duration) {}
 
 type streamStatusDSStub struct {
 	resp *http.Response

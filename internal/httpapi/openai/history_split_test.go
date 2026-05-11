@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 
@@ -59,7 +60,8 @@ func (streamStatusManagedAuthStub) DetermineCaller(_ *http.Request) (*auth.Reque
 	return (&streamStatusManagedAuthStub{}).Determine(nil)
 }
 
-func (streamStatusManagedAuthStub) Release(_ *auth.RequestAuth) {}
+func (streamStatusManagedAuthStub) Release(_ *auth.RequestAuth)                                {}
+func (streamStatusManagedAuthStub) RecordUsage(_ *auth.RequestAuth, _, _ int, _ time.Duration) {}
 
 func TestBuildOpenAICurrentInputContextTranscriptUsesNumberedHistorySections(t *testing.T) {
 	transcript := buildOpenAICurrentInputContextTranscript(historySplitTestMessages())

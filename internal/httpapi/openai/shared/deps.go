@@ -3,6 +3,7 @@ package shared
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"ds2api/internal/auth"
 	"ds2api/internal/chathistory"
@@ -22,6 +23,7 @@ type AuthResolver interface {
 	Determine(req *http.Request) (*auth.RequestAuth, error)
 	DetermineCaller(req *http.Request) (*auth.RequestAuth, error)
 	Release(a *auth.RequestAuth)
+	RecordUsage(a *auth.RequestAuth, inputTokens, outputTokens int, elapsed time.Duration)
 }
 
 type DeepSeekCaller interface {
